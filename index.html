@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Tareas Cloud</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        .input-group button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .input-group button:hover {
+            background-color: #2980b9;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        li:hover {
+            background-color: #f1f1f1;
+        }
+        li.completed {
+            background-color: #e8f5e9;
+            text-decoration: line-through;
+            color: #888;
+        }
+        li span {
+            flex-grow: 1;
+        }
+        .delete-btn, .complete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 16px;
+        }
+        .delete-btn {
+            color: #e74c3c;
+        }
+        .complete-btn {
+            color: #27ae60;
+        }
+        .empty-message {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestor de Tareas Cloud</h1>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Añadir nueva tarea...">
+            <button id="addBtn">Añadir</button>
+        </div>
+        <ul id="taskList"></ul>
+        <p id="emptyMessage" class="empty-message">No hay tareas pendientes. ¡Añade una!</p>
+        <div class="footer">
+            <p>Aplicación SaaS desarrollada para la práctica de Cloud Computing</p>
+        </div>
+    </div>
+
+    <script>
+        // Función para cargar tareas desde localStorage
+        function loadTasks() {
+            const savedTasks = localStorage.getItem('tasks');
+            return savedTasks ? JSON.parse(savedTasks) : [];
+        }
+
+        // Función para guardar tareas en localStorage
+        function saveTasks(tasks) {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Función para renderizar las tareas
+        function renderTasks() {
+            const tasks = loadTasks();
+            const taskList = document.getElementById('taskList');
+            const emptyMessage = document.getElementById('emptyMessage');
+            
+            // Limpiar la lista
+            taskList.innerHTML = '';
+            
+            // Mostrar mensaje si no hay tareas
+            if (tasks.length === 0) {
+                emptyMessage.style.display = 'block';
+            } else {
+                emptyMessage.style.display = 'none';
+                
+                // Crear elementos para cada tarea
+                tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    if (task.completed) {
+                        li.classList.add('completed');
+                    }
+                    
+                    const span = document.createElement('span');
+                    span.textContent = task.text;
+                    li.appendChild(span);
+                    
+                    const completeBtn = document.createElement('button');
+                    completeBtn.innerHTML = '✓';
+                    completeBtn.className = 'complete-btn';
+                    completeBtn.addEventListener('click', () => toggleComplete(index));
+                    li.appendChild(completeBtn);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = '×';
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.addEventListener('click', () => deleteTask(index));
+                    li.appendChild(deleteBtn);
+                    
+                    taskList.appendChild(li);
+                });
+            }
+        }
+
+        // Función para añadir tarea
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const text = taskInput.value.trim();
+            
+            if (text) {
+                const tasks = loadTasks();
+                tasks.push({ text, completed: false });
+                saveTasks(tasks);
+                taskInput.value = '';
+                renderTasks();
+            }
+        }
+
+        // Función para marcar tarea como completada
+        function toggleComplete(index) {
+            const tasks = loadTasks();
+            tasks[index].completed = !tasks[index].completed;
+            saveTasks(tasks);
+            renderTasks();
+        }
+
+        // Función para eliminar tarea
+        function deleteTask(index) {
+            const tasks = loadTasks();
+            tasks.splice(index, 1);
+            saveTasks(tasks);
+            renderTasks();
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTasks();
+            
+            // Configurar evento para el botón Añadir
+            document.getElementById('addBtn').addEventListener('click', addTask);
+            
+            // Configurar evento para presionar Enter
+            document.getElementById('taskInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
